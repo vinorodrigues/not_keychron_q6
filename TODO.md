@@ -6,8 +6,8 @@
 - [ ] Num-lock indicator (Mac emulation and Windows)
 - [ ] Scroll-lock indicator (self finding)
 
-- [ ] VIA `.json` file
-- [ ] Port to Vial
+- [x] VIA `.json` file
+- [x] Port to Vial
 
 ## Public readiness
 
@@ -18,3 +18,4 @@
 - [ ] ISO Knob version
 - [ ] ISO Non-knob version
 
+***

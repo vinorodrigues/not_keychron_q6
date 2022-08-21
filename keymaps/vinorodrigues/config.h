@@ -17,3 +17,12 @@
 // #define ENCODER_RESOLUTION 4
 
 #undef FORCE_NKRO  // NKRO stops macOS Fn key functionality
+
+/* ----
+ * VIAL
+ * ---- */
+
+#define VIAL_KEYBOARD_UID {0x18, 0xE6, 0x23, 0x34, 0x08, 0xC4, 0xF4, 0x5D}
+// Unlock with Esc + Enter
+#define VIAL_UNLOCK_COMBO_ROWS { 0, 3 }
+#define VIAL_UNLOCK_COMBO_COLS { 0, 13 }

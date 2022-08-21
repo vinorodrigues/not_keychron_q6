@@ -7,5 +7,12 @@ SRC += q6_ansi_knob.c
 # MOUSEKEY_ENABLE = no
 # DIP_SWITCH_ENABLE = no
 
-# LTO_ENABLE = yes
+LTO_ENABLE = yes
 VIA_ENABLE = yes
+
+# --- Vial Specific ---
+VIAL_ENABLE = yes
+VIALRGB_ENABLE = yes
+QMK_SETTINGS = no      # save eeprom
+TAP_DANCE_ENABLE = no  # save eeprom
+COMBO_ENABLE = no      # save eeprom
