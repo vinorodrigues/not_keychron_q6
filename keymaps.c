@@ -159,6 +159,15 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
             if (!get_mods()) {
                 if (!record->event.pressed) {
                     SEND_STRING(QMK_KEYBOARD ":" QMK_KEYMAP " (v" QMK_VERSION ")");
+
+                    SEND_STRING(" [E");
+                    #ifdef USE_EEPROM
+                    SEND_STRING("EPROM");
+                    #elif USE_EFL_WL
+                    SEND_STRING("FL/WL");
+                    #endif
+                    SEND_STRING("]");
+
                     // #ifdef VIA_ENABLE
                     // /* show the Layout Options stored in VIA */
                     // char str[9];

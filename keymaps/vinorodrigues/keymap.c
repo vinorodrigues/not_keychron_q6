@@ -131,11 +131,11 @@ void matrix_scan_user(void) {
 
 void rgb_matrix_indicators_user(void) {
     if (host_keyboard_led_state().caps_lock) {
-        rgb_matrix_set_color(61, RGB_WHITE);
+        rgb_matrix_set_color(CAPS_LOCK_LED_INDEX, RGB_WHITE);
     }
 
     uint8_t layer = get_highest_layer(layer_state);
     if (host_keyboard_led_state().num_lock || (MAC_NUML == layer)) {
-        rgb_matrix_set_color(37, RGB_WHITE);
+        rgb_matrix_set_color(NUM_LOCK_LED_INDEX, RGB_WHITE);
     }
 }

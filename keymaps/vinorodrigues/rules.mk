@@ -13,6 +13,7 @@ VIA_ENABLE = yes
 # --- Vial Specific ---
 VIAL_ENABLE = yes
 VIALRGB_ENABLE = yes
-QMK_SETTINGS = no      # save eeprom
-TAP_DANCE_ENABLE = no  # save eeprom
-COMBO_ENABLE = no      # save eeprom
+QMK_SETTINGS = no        # save eeprom
+TAP_DANCE_ENABLE = no    # save eeprom
+COMBO_ENABLE = no        # save eeprom
+KEY_OVERRIDE_ENABLE = no # save eeprom

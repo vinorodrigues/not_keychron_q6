@@ -136,10 +136,10 @@
 #endif  // RGB_MATRIX_ENABLE
 
 /* Enable caps-lock LED*/
-// #define CAPS_LOCK_LED_INDEX 61
+#define CAPS_LOCK_LED_INDEX 61  // 3,0
 
 /* Enable NUM_LOCK_LED_INDEX */
-// #define NUM_LOCK_LED_INDEX 37
+#define NUM_LOCK_LED_INDEX 37  // 1,17 (1,H)
 
 
 /* -----------------------
