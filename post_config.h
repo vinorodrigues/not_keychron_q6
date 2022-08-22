@@ -7,10 +7,6 @@
  * Compiler flags
  * -------------- */
 
-#if !defined(USE_EEPROM) && !defined(USE_EFL_WL)
-    #error "Please define the compile type"
-#endif
-
 #ifdef IS_ANSI_KNOB
     #define IS_ANSI
 #endif

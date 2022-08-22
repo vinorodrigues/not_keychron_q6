@@ -25,11 +25,13 @@
     // #define EXTERNAL_EEPROM_ADDRESS_SIZE 2               // The number of bytes to transmit for the memory location within the EEPROM
     // #define EXTERNAL_EEPROM_WRITE_TIME 5                 // Write cycle time of the EEPROM, as specified in the datasheet
     // #undef EXTERNAL_EEPROM_WP_PIN                        // If defined the WP pin will be toggled appropriately when writing to the EEPROM.	none
-#else
+#elif USE_EFL_WL
     /* EFL/WL Driver Configuration */
     #define WEAR_LEVELING_LOGICAL_SIZE 2048                              // Number of bytes "exposed" to the rest of QMK and denotes the size of the usable EEPROM.
     #define WEAR_LEVELING_BACKING_SIZE (WEAR_LEVELING_LOGICAL_SIZE * 2)  // Number of bytes used by the wear-leveling algorithm for its underlying storage, and needs to be a multiple of the logical size.
     #define DYNAMIC_KEYMAP_EEPROM_MAX_ADDR 2047
+#else
+    #error "Please define the compile type"
 #endif
 
 
@@ -75,7 +77,7 @@
     #define CONSTANT_CURRENT_STEP { 0xA4, 0xA4, 0x52, 0xA4, 0xA4, 0x52, 0xA4, 0xA4, 0x52, 0xA4, 0xA4, 0x52 }
 
     /* Limit maximum brightness of LEDs to {x} out of 255. If not defined maximum brightness is set to 255 */
-    #define RGB_MATRIX_MAXIMUM_BRIGHTNESS 180
+    // #define RGB_MATRIX_MAXIMUM_BRIGHTNESS 180  // don't use, CONSTANT_CURRENT_STEP takes care of this
 
     /* ----------
      * Animations

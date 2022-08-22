@@ -123,3 +123,19 @@ void matrix_scan_user(void) {
     encoder_action_unregister();
     #endif  // ENCODER_ENABLE
 }
+
+
+/* --------------
+ * LED Indicators
+ * -------------- */
+
+void rgb_matrix_indicators_user(void) {
+    if (host_keyboard_led_state().caps_lock) {
+        rgb_matrix_set_color(61, RGB_WHITE);
+    }
+
+    uint8_t layer = get_highest_layer(layer_state);
+    if (host_keyboard_led_state().num_lock || (MAC_NUML == layer)) {
+        rgb_matrix_set_color(37, RGB_WHITE);
+    }
+}
