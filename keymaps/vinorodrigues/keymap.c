@@ -63,9 +63,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 #ifdef DIP_SWITCH_ENABLE
 
 bool dip_switch_update_user(uint8_t index, bool active) {
-    if (index == 0) {
-        default_layer_set(1UL << (active ? WIN_BASE : MAC_BASE));
-    }
+    if (index == 0) default_layer_set(1UL << (active ? WIN_BASE : MAC_BASE));
+
     return true;
 }
 
