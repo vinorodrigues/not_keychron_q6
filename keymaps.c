@@ -132,6 +132,8 @@ bool __factory_rt(keyrecord_t *record, uint8_t data) {
  * ------------------- */
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
+    if (!process_record_user(keycode, record)) return false;
+
     switch (keycode) {
         // macOS keys
         case KC_MISSION_CONTROL: return __consumer_send(record, _AC_SHOW_ALL_WINDOWS);

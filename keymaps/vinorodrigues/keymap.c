@@ -4,6 +4,20 @@
 #include QMK_KEYBOARD_H
 #include "keymaps.h"
 
+#ifdef RGB_MATRIX_ENABLE
+
+typedef union {
+    uint32_t raw;
+    struct {
+        bool rgb_disable_led:1;
+    };
+} user_config_t;
+
+user_config_t user_config;
+
+#endif  // RGB_MATRIX_ENABLE
+
+
 #define Q6_M_FN MO(MAC_FN)
 #define Q6_M_NL TG(MAC_NUML)
 #define Q6_W_FN MO(WIN_FN)
@@ -64,7 +78,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 bool dip_switch_update_user(uint8_t index, bool active) {
     if (index == 0) default_layer_set(1UL << (active ? WIN_BASE : MAC_BASE));
-
     return true;
 }
 
@@ -128,13 +141,118 @@ void matrix_scan_user(void) {
  * LED Indicators
  * -------------- */
 
-void rgb_matrix_indicators_user(void) {
-    if (host_keyboard_led_state().caps_lock) {
-        rgb_matrix_set_color(CAPS_LOCK_LED_INDEX, RGB_WHITE);
+#ifdef RGB_MATRIX_ENABLE
+
+bool led_sngltn[2];
+
+#ifdef RGB_MATRIX_MAXIMUM_BRIGHTNESS
+    #define Q6_INDICATOR_MAX_BRIGHTNESS RGB_MATRIX_MAXIMUM_BRIGHTNESS
+#else
+    #define Q6_INDICATOR_MAX_BRIGHTNESS 0xFF
+#endif
+
+#ifdef RGB_MATRIX_VAL_STEP
+    #define Q6_INDICATOR_VAL_STEP RGB_MATRIX_VAL_STEP
+#else
+    #define Q6_INDICATOR_VAL_STEP 8
+#endif
+
+void update_q6_rgb_mode(void) {
+    if (user_config.rgb_disable_led) {
+        rgb_matrix_set_flags(0xF0);  // don't use 0, disables LED to off condition
+        rgb_matrix_set_color_all(HSV_OFF);
+    } else {
+        rgb_matrix_set_flags(LED_FLAG_ALL);
+        rgb_matrix_enable_noeeprom();
     }
 
+    eeconfig_update_kb(user_config.raw);  // write back to EEPROM
+}
+
+void get_q6_rgb_mode(void) {
+    user_config.raw = eeconfig_read_kb();  // read config from EEPROM
+    update_q6_rgb_mode();
+}
+
+void keyboard_post_init_user(void) {
+    get_q6_rgb_mode();
+    for (int i = 0; i < 2; i++) { led_sngltn[i] = false; }
+}
+
+void eeconfig_init_user(void) {
+    // EEPROM is getting reset!
+    user_config.raw = 0;
+    update_q6_rgb_mode();
+}
+
+void rgb_matrix_indicators_user(void) {
     uint8_t layer = get_highest_layer(layer_state);
-    if (host_keyboard_led_state().num_lock || (MAC_NUML == layer)) {
-        rgb_matrix_set_color(NUM_LOCK_LED_INDEX, RGB_WHITE);
+    bool mac_nl = (layer >= MAC_NUML) && (layer < WIN_BASE);
+
+    uint8_t v = rgb_matrix_get_val();
+    if (v < Q6_INDICATOR_VAL_STEP) {
+        v = Q6_INDICATOR_VAL_STEP;
+    } else if (v < (Q6_INDICATOR_MAX_BRIGHTNESS - Q6_INDICATOR_VAL_STEP)) {
+        if (!user_config.rgb_disable_led) {
+            v += Q6_INDICATOR_VAL_STEP;  // inc. by one more step than current brightness
+        }  // else leave as current brightness
+    } else {
+        v = Q6_INDICATOR_MAX_BRIGHTNESS;
+    }
+
+    if (host_keyboard_led_state().caps_lock) {
+        rgb_matrix_set_color(CAPS_LOCK_LED_INDEX, v, v, v);  // white
+        if (!led_sngltn[0]) led_sngltn[0] = true;
+    } else if (led_sngltn[0]) {
+        rgb_matrix_set_color(CAPS_LOCK_LED_INDEX, HSV_OFF);  // off, if it was on before
+        led_sngltn[0] = false;
+    }
+
+    if (host_keyboard_led_state().num_lock || mac_nl) {
+        rgb_matrix_set_color(NUM_LOCK_LED_INDEX, v, v, v);  // white
+        if (!led_sngltn[1]) led_sngltn[1] = true;
+    } else if (led_sngltn[1]) {
+        rgb_matrix_set_color(NUM_LOCK_LED_INDEX, HSV_OFF);  // off, if it was on before
+        led_sngltn[1] = false;
     }
 }
+
+/*
+ * Extra keys and RGB Toggle handler
+ */
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+
+        case QK_BOOT:
+            if (record->event.pressed) {
+                rgb_matrix_set_color_all(Q6_INDICATOR_MAX_BRIGHTNESS, 0, 0);  // All red
+                rgb_matrix_driver.flush();
+                wait_ms(10);  // give it time to go red
+            }
+            return true;
+
+        case RGB_TOG:
+            /* |    Level    | LED |
+             * |-------------|-----|
+             * | 0 (default) | on  |
+             * |     1       | OFF |
+             */
+            if (record->event.pressed) {
+                user_config.rgb_disable_led = user_config.rgb_disable_led ? 0 : 1;
+                update_q6_rgb_mode();
+            }
+            return false;  // block default RGB_TOG
+
+        case EE_CLR:
+            if (!record->event.pressed) {  // on release
+                get_q6_rgb_mode();
+            }
+            return true;  // let this one pass on
+
+        default:
+            return true; /* Process all other keycodes normally */
+    }
+}
+
+#endif  // RGB_MATRIX_ENABLE
