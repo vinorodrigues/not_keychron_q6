@@ -6,3 +6,6 @@
 #include "quantum.h"
 
 /* FYI - Key matrix is in the `info.json` file */
+
+#define DEFAULT_MAC_BASE 0
+#define DEFAULT_WIN_BASE 2

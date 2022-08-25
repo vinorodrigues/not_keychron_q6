@@ -175,8 +175,8 @@ void get_q6_rgb_mode(void) {
 }
 
 void keyboard_post_init_user(void) {
-    get_q6_rgb_mode();
     for (int i = 0; i < 2; i++) { led_sngltn[i] = false; }
+    get_q6_rgb_mode();
 }
 
 void eeconfig_init_user(void) {
