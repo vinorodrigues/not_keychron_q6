@@ -142,7 +142,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
         case KC_RIGHT_OPTION: return __code_1(record, KC_ROPT);
         case KC_LEFT_COMMAND: return __code_1(record, KC_LCMD);
         case KC_RIGHT_COMMAND: return __code_1(record, KC_RCMD);
-        case KC_SIRI: return __code_2(record, KC_LCMD, KC_SPACE);
+        case KC_SIRI: return __code_2(record, KC_LOPT, KC_SPACE);
         case KC_SCREEN_SHOT: return __code_3(record, KC_LSFT, KC_LCMD, KC_4);
 
         // Windows keys
