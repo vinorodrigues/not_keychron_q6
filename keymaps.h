@@ -3,7 +3,7 @@
 
 #pragma once
 
-enum layers{
+enum layers {
     MAC_BASE,
     MAC_FN,
     WIN_BASE,

@@ -18,7 +18,7 @@ user_config_t user_config;
 #endif  // RGB_MATRIX_ENABLE
 
 
-enum my_layers{
+enum my_layers {
     MY_MAC_BASE,
     MY_MAC_NUML,
     MY_MAC_FN,
@@ -81,6 +81,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 #define LED_FLAG_ALPHA_KEY 0x10  // Alpha keys (for Caps Lock)
 #define LED_FLAG_LAYER_IND 0x20  // Layer indicator
+#define LED_FLAG_UNUSED    0xC0  // 0b11000000
 
 const uint8_t g_led_config_new_flags[DRIVER_LED_TOTAL] = {
     // Extended LED Index to Flag
@@ -173,7 +174,14 @@ void matrix_scan_user(void) {
 
 #ifdef RGB_MATRIX_ENABLE
 
-bool led_sngltn[2];
+enum singletons {
+    SGLT_CPS,
+    SGLT_NUM,
+    SGLT_LYR,
+    __SGLT_SIZE  // use the last one to set the size - 1 = 0 index length ;)
+};
+
+bool led_sngltn[__SGLT_SIZE];
 
 #ifdef RGB_MATRIX_MAXIMUM_BRIGHTNESS
     #define Q6_INDICATOR_MAX_BRIGHTNESS RGB_MATRIX_MAXIMUM_BRIGHTNESS
@@ -189,7 +197,7 @@ bool led_sngltn[2];
 
 void update_q6_rgb_mode(void) {
     if (user_config.rgb_disable_led) {
-        rgb_matrix_set_flags(0xF0);  // don't use 0, disables LED to off condition
+        rgb_matrix_set_flags(LED_FLAG_UNUSED);  // don't use 0, disables LED to off condition
         rgb_matrix_set_color_all(HSV_OFF);
     } else {
         rgb_matrix_set_flags(LED_FLAG_ALL);
@@ -210,7 +218,7 @@ void keyboard_pre_init_user(void) {
 }
 
 void keyboard_post_init_user(void) {
-    for (int i = 0; i < 2; i++) { led_sngltn[i] = false; }
+    for (int i = 0; i < __SGLT_SIZE; i++) { led_sngltn[i] = false; }
     get_q6_rgb_mode();
 }
 
@@ -248,42 +256,48 @@ void rgb_matrix_indicators_user(void) {
         rgb_matrix_set_color(CAPS_LOCK_LED_INDEX, v, v, v);  // white
         if (!user_config.rgb_disable_led)
             __rgb_matrix_set_all_color_by_flag(LED_FLAG_ALPHA_KEY, v, 0, 0);  // red
-        if (!led_sngltn[0])
-            led_sngltn[0] = true;
-    } else if (led_sngltn[0]) {
+        if (!led_sngltn[SGLT_CPS] && user_config.rgb_disable_led) led_sngltn[SGLT_CPS] = true;
+    } else if (led_sngltn[SGLT_CPS]) {
         rgb_matrix_set_color(CAPS_LOCK_LED_INDEX, HSV_OFF);  // off, if it was on before
-        led_sngltn[0] = false;
+        __rgb_matrix_set_all_color_by_flag(LED_FLAG_ALPHA_KEY, 0, 0, 0);
+        led_sngltn[SGLT_CPS] = false;
     }
 
     // num-lock indicators
     if (host_keyboard_led_state().num_lock || mac_nl) {
         rgb_matrix_set_color(NUM_LOCK_LED_INDEX, v, v, v);  // white
-        if (!led_sngltn[1])
-            led_sngltn[1] = true;
-    } else if (led_sngltn[1]) {
+        if (!led_sngltn[SGLT_NUM] && user_config.rgb_disable_led) led_sngltn[SGLT_NUM] = true;
+    } else if (led_sngltn[SGLT_NUM]) {
         rgb_matrix_set_color(NUM_LOCK_LED_INDEX, HSV_OFF);  // off, if it was on before
-        led_sngltn[1] = false;
+        led_sngltn[SGLT_NUM] = false;
     }
 
     // layer indicators
     switch (layer) {
         case MY_MAC_FN:
             __rgb_matrix_set_all_color_by_flag(LED_FLAG_LAYER_IND, 0, 0, v);  // blue
+            if (!led_sngltn[SGLT_LYR]) led_sngltn[SGLT_LYR] = true;
             break;
 
         // case MY_WIN_BASE:
         //     if (default_layer_state == MAC_BASE) {
         //         __rgb_matrix_set_all_color_by_flag(LED_FLAG_LAYER_IND, v, 0, 0);  // red
+        //         if (!led_sngltn[SGLT_LYR]) led_sngltn[SGLT_LYR] = true;
         //     }  // else do nothing
         //     break;
 
         case MY_WIN_FN:
             __rgb_matrix_set_all_color_by_flag(LED_FLAG_LAYER_IND, 0, v, 0);  // green
+            if (!led_sngltn[SGLT_LYR] && user_config.rgb_disable_led) led_sngltn[SGLT_LYR] = true;
             break;
 
         // case MY_MAC_BASE:
         // case MY_MAC_NUML:
         default:
+            if (led_sngltn[SGLT_LYR] && user_config.rgb_disable_led) {
+                __rgb_matrix_set_all_color_by_flag(LED_FLAG_LAYER_IND, 0, 0, 0);  // off
+                led_sngltn[SGLT_LYR] = false;
+            }
             break;  // do nothing
     }
 }
