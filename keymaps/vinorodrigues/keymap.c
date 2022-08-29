@@ -77,6 +77,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______, _______, _______,                            _______,                            _______, _______, _______, _______, _______, _______, _______, _______,           _______         )
 };
 
+
+/* ------------
+ * LED OVERRIDE
+ * ------------ */
+
 #ifdef RGB_MATRIX_ENABLE
 
 #define LED_FLAG_ALPHA_KEY 0x10  // Alpha keys (for Caps Lock)
@@ -85,7 +90,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 const uint8_t g_led_config_new_flags[DRIVER_LED_TOTAL] = {
     // Extended LED Index to Flag
-    // LED Index to Flag
     0x01, 0x01, 0x01, 0x01, 0x01, 0x21, 0x21, 0x21, 0x21, 0x01, 0x01, 0x01, 0x01,       0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
     0x01, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x01, 0x01, 0x01, 0x01, 0x09, 0x04, 0x04, 0x04,
     0x01, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x04, 0x04, 0x04, 0x01, 0x01, 0x01, 0x04, 0x04, 0x04,
@@ -174,14 +178,16 @@ void matrix_scan_user(void) {
 
 #ifdef RGB_MATRIX_ENABLE
 
-enum singletons {
-    SGLT_CPS,
-    SGLT_NUM,
-    SGLT_LYR,
-    __SGLT_SIZE  // use the last one to set the size - 1 = 0 index length ;)
-};
+typedef union {
+    uint32_t raw;
+    struct {
+        bool caps_led:1;
+        bool num_led:1;
+        bool lyr_led:1;
+    };
+} led_sngltn_t;
 
-bool led_sngltn[__SGLT_SIZE];
+led_sngltn_t led_sngltn;
 
 #ifdef RGB_MATRIX_MAXIMUM_BRIGHTNESS
     #define Q6_INDICATOR_MAX_BRIGHTNESS RGB_MATRIX_MAXIMUM_BRIGHTNESS
@@ -218,7 +224,7 @@ void keyboard_pre_init_user(void) {
 }
 
 void keyboard_post_init_user(void) {
-    for (int i = 0; i < __SGLT_SIZE; i++) { led_sngltn[i] = false; }
+    led_sngltn.raw = 0;
     get_q6_rgb_mode();
 }
 
@@ -256,47 +262,52 @@ void rgb_matrix_indicators_user(void) {
         rgb_matrix_set_color(CAPS_LOCK_LED_INDEX, v, v, v);  // white
         if (!user_config.rgb_disable_led)
             __rgb_matrix_set_all_color_by_flag(LED_FLAG_ALPHA_KEY, v, 0, 0);  // red
-        if (!led_sngltn[SGLT_CPS] && user_config.rgb_disable_led) led_sngltn[SGLT_CPS] = true;
-    } else if (led_sngltn[SGLT_CPS]) {
+        if (!led_sngltn.caps_led && user_config.rgb_disable_led)
+            led_sngltn.caps_led = true;
+    } else if (led_sngltn.caps_led) {
         rgb_matrix_set_color(CAPS_LOCK_LED_INDEX, HSV_OFF);  // off, if it was on before
         __rgb_matrix_set_all_color_by_flag(LED_FLAG_ALPHA_KEY, 0, 0, 0);
-        led_sngltn[SGLT_CPS] = false;
+        led_sngltn.caps_led = false;
     }
 
     // num-lock indicators
     if (host_keyboard_led_state().num_lock || mac_nl) {
         rgb_matrix_set_color(NUM_LOCK_LED_INDEX, v, v, v);  // white
-        if (!led_sngltn[SGLT_NUM] && user_config.rgb_disable_led) led_sngltn[SGLT_NUM] = true;
-    } else if (led_sngltn[SGLT_NUM]) {
+        if (!led_sngltn.num_led && user_config.rgb_disable_led)
+            led_sngltn.num_led = true;
+    } else if (led_sngltn.num_led) {
         rgb_matrix_set_color(NUM_LOCK_LED_INDEX, HSV_OFF);  // off, if it was on before
-        led_sngltn[SGLT_NUM] = false;
+        led_sngltn.num_led = false;
     }
 
     // layer indicators
     switch (layer) {
         case MY_MAC_FN:
             __rgb_matrix_set_all_color_by_flag(LED_FLAG_LAYER_IND, 0, 0, v);  // blue
-            if (!led_sngltn[SGLT_LYR]) led_sngltn[SGLT_LYR] = true;
+            if (!led_sngltn.lyr_led)
+                led_sngltn.lyr_led = true;
             break;
 
         // case MY_WIN_BASE:
         //     if (default_layer_state == MAC_BASE) {
         //         __rgb_matrix_set_all_color_by_flag(LED_FLAG_LAYER_IND, v, 0, 0);  // red
-        //         if (!led_sngltn[SGLT_LYR]) led_sngltn[SGLT_LYR] = true;
+        //         if (!led_sngltn.lyr_led)
+        //             led_sngltn.lyr_led = true;
         //     }  // else do nothing
         //     break;
 
         case MY_WIN_FN:
             __rgb_matrix_set_all_color_by_flag(LED_FLAG_LAYER_IND, 0, v, 0);  // green
-            if (!led_sngltn[SGLT_LYR] && user_config.rgb_disable_led) led_sngltn[SGLT_LYR] = true;
+            if (!led_sngltn.lyr_led && user_config.rgb_disable_led)
+                led_sngltn.lyr_led = true;
             break;
 
         // case MY_MAC_BASE:
         // case MY_MAC_NUML:
         default:
-            if (led_sngltn[SGLT_LYR] && user_config.rgb_disable_led) {
+            if (led_sngltn.lyr_led && user_config.rgb_disable_led) {
                 __rgb_matrix_set_all_color_by_flag(LED_FLAG_LAYER_IND, 0, 0, 0);  // off
-                led_sngltn[SGLT_LYR] = false;
+                led_sngltn.lyr_led = false;
             }
             break;  // do nothing
     }
