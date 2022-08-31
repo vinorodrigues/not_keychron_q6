@@ -17,3 +17,9 @@ QMK_SETTINGS = no        # save eeprom
 TAP_DANCE_ENABLE = no    # save eeprom
 COMBO_ENABLE = no        # save eeprom
 KEY_OVERRIDE_ENABLE = no # save eeprom
+
+# --- force EEPROM ---
+EEPROM_DRIVER = i2c
+OPT_DEFS += -DEEPROM_ENABLE
+
+OPT_DEFS += -DFACTORY_RESET_ENABLE

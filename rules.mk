@@ -18,7 +18,7 @@ ENCODER_ENABLE = yes           # Enable Encoder
 ENCODER_MAP_ENABLE = no        # don't use encoder maps
 RGB_MATRIX_ENABLE = yes        # Enable RGB Matrix, with..
 RGB_MATRIX_DRIVER = CKLED2001  # ..custom RGB driver
-RAW_ENABLE = yes
+# RAW_ENABLE = yes               # # always enable HID raw
 FACTORY_RESET = yes            # Enable Fn+J+Z factory reset hot keys
 
 # Enter lower-power sleep mode when on the ChibiOS idle thread

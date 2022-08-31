@@ -6,15 +6,57 @@
 #include "version.h"
 
 
+/* --------------
+ * ROTARY ENCODER
+ * -------------- */
+
+#ifdef ENCODER_ENABLE
+
+static uint8_t  encoder_state = 0;
+static keypos_t encoder_cw    = {8, 5};
+static keypos_t encoder_ccw   = {7, 5};
+
+void encoder_action_unregister(void) {
+    if (encoder_state) {
+        keyevent_t encoder_event = (keyevent_t){
+            .key = encoder_state >> 1 ? encoder_cw : encoder_ccw,
+            .pressed = false,
+            .time = (timer_read() | 1)
+        };
+        encoder_state = 0;
+        action_exec(encoder_event);
+    }
+}
+
+void encoder_action_register(uint8_t index, bool clockwise) {
+    if (index != 0) return;
+
+    keyevent_t encoder_event = (keyevent_t){
+        .key = clockwise ? encoder_cw : encoder_ccw,
+        .pressed = true,
+        .time = (timer_read() | 1)
+    };
+    encoder_state = (clockwise ^ 1) | (clockwise << 1);
+    action_exec(encoder_event);
+}
+
+bool encoder_update_user(uint8_t index, bool clockwise) {
+    encoder_action_register(index, clockwise);
+    return false;
+};
+
+void matrix_scan_user(void) {
+    encoder_action_unregister();
+}
+
+#endif  // ENCODER_ENABLE
+
+
 /* ---------------
  * Custom keycodes
  * --------------- */
 
-#ifdef USE_FACTORY_RESET
-
-// rember to overide these in your keymap
-#define MAC_FN_LAYER 1
-#define WIN_FN_LAYER 3
+#ifdef FACTORY_RESET_ENABLE
 
 static void timer_3s_task(void);
 static void timer_300ms_task(void);
@@ -60,7 +102,7 @@ static void timer_300ms_task(void) {
     }
 }
 
-#endif  // USE_FACTORY_RESET
+#endif  // FACTORY_RESET_ENABLE
 
 
 /* -----------------
@@ -109,7 +151,7 @@ bool __code_3(keyrecord_t *record, uint16_t data1, uint16_t data2, uint16_t data
     return false;  // Skip all further processing of this key
 }
 
-#ifdef USE_FACTORY_RESET
+#ifdef FACTORY_RESET_ENABLE
 
 bool __factory_rt(keyrecord_t *record, uint8_t data) {
     if (record->event.pressed) {
@@ -124,7 +166,7 @@ bool __factory_rt(keyrecord_t *record, uint8_t data) {
     return true;
 }
 
-#endif  // USE_FACTORY_RESET
+#endif  // FACTORY_RESET_ENABLE
 
 
 /* -------------------
@@ -163,10 +205,12 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                     SEND_STRING(QMK_KEYBOARD ":" QMK_KEYMAP " (v" QMK_VERSION ")");
 
                     SEND_STRING(" [E");
-                    #ifdef USE_EEPROM
+                    #ifdef EEPROM_ENABLE
                     SEND_STRING("EPROM");
-                    #elif USE_EFL_WL
+                    #elif EFL_WL_ENABLE
                     SEND_STRING("FL/WL");
+                    #else
+                    SEND_STRING("rr");  // should never run
                     #endif
                     SEND_STRING("]");
 
@@ -183,14 +227,14 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
             return false;
 
         // Factory reset
-        #ifdef USE_FACTORY_RESET
+        #ifdef FACTORY_RESET_ENABLE
 
         case MO(WIN_FN_LAYER):
         case MO(MAC_FN_LAYER): return __factory_rt(record, KEY_PRESS_FN);
         case KC_J: return __factory_rt(record, KEY_PRESS_J);
         case KC_Z: return __factory_rt(record, KEY_PRESS_Z);
 
-        #endif  // USE_FACTORY_RESET
+        #endif  // FACTORY_RESET_ENABLE
 
         // Default
         default:

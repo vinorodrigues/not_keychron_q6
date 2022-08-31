@@ -10,6 +10,10 @@ enum layers {
     WIN_FN
 };
 
+// remember to override these in your keymap
+#define MAC_FN_LAYER MAC_FN
+#define WIN_FN_LAYER WIN_FN
+
 enum custom_keycodes {
     #if VIA_ENABLE
     KC_MISSION_CONTROL = USER00,

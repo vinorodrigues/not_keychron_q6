@@ -26,6 +26,9 @@ enum my_layers {
     MY_WIN_FN
 };
 
+#undef MAC_FN_LAYER
+#define MAC_FN_LAYER MY_MAC_FN
+
 #define Q6_M_FN MO(MY_MAC_FN)
 #define Q6_M_NL TG(MY_MAC_NUML)
 #define Q6_W_FN MO(MY_WIN_FN)
@@ -98,6 +101,11 @@ const uint8_t g_led_config_new_flags[DRIVER_LED_TOTAL] = {
     0x01, 0x01, 0x01,                   0x04,                   0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x04,       0x04, 0x01,
 };
 
+void keyboard_pre_init_user(void) {
+    // override config.flags with new values
+    for (int i = 0; i < DRIVER_LED_TOTAL; i++) g_led_config.flags[i] = g_led_config_new_flags[i];
+}
+
 #endif  // RGB_MATRIX_ENABLE
 
 
@@ -117,59 +125,6 @@ bool dip_switch_update_user(uint8_t index, bool active) {
 }
 
 #endif  // DIP_SWITCH_ENABLE
-
-
-/* --------------
- * ROTARY ENCODER
- * -------------- */
-
-#ifdef ENCODER_ENABLE
-
-static uint8_t  encoder_state = 0;
-static keypos_t encoder_cw    = {8, 5};
-static keypos_t encoder_ccw   = {7, 5};
-
-void encoder_action_unregister(void) {
-    if (encoder_state) {
-        keyevent_t encoder_event = (keyevent_t){
-            .key = encoder_state >> 1 ? encoder_cw : encoder_ccw,
-            .pressed = false,
-            .time = (timer_read() | 1)
-        };
-        encoder_state = 0;
-        action_exec(encoder_event);
-    }
-}
-
-void encoder_action_register(uint8_t index, bool clockwise) {
-    if (index != 0) return;
-
-    keyevent_t encoder_event = (keyevent_t){
-        .key = clockwise ? encoder_cw : encoder_ccw,
-        .pressed = true,
-        .time = (timer_read() | 1)
-    };
-    encoder_state = (clockwise ^ 1) | (clockwise << 1);
-    action_exec(encoder_event);
-}
-
-bool encoder_update_user(uint8_t index, bool clockwise) {
-    encoder_action_register(index, clockwise);
-    return false;
-};
-
-#endif  // ENCODER_ENABLE
-
-
-/* ------------
- * Key specific
- * ------------ */
-
-void matrix_scan_user(void) {
-    #ifdef ENCODER_ENABLE
-    encoder_action_unregister();
-    #endif  // ENCODER_ENABLE
-}
 
 
 /* --------------
@@ -216,11 +171,6 @@ void update_q6_rgb_mode(void) {
 void get_q6_rgb_mode(void) {
     user_config.raw = eeconfig_read_kb();  // read config from EEPROM
     update_q6_rgb_mode();
-}
-
-void keyboard_pre_init_user(void) {
-    // override config.flags with new values
-    for (int i = 0; i < DRIVER_LED_TOTAL; i++) g_led_config.flags[i] = g_led_config_new_flags[i];
 }
 
 void keyboard_post_init_user(void) {
@@ -288,14 +238,6 @@ void rgb_matrix_indicators_user(void) {
                 led_sngltn.lyr_led = true;
             break;
 
-        // case MY_WIN_BASE:
-        //     if (default_layer_state == MAC_BASE) {
-        //         __rgb_matrix_set_all_color_by_flag(LED_FLAG_LAYER_IND, v, 0, 0);  // red
-        //         if (!led_sngltn.lyr_led)
-        //             led_sngltn.lyr_led = true;
-        //     }  // else do nothing
-        //     break;
-
         case MY_WIN_FN:
             __rgb_matrix_set_all_color_by_flag(LED_FLAG_LAYER_IND, 0, v, 0);  // green
             if (!led_sngltn.lyr_led && user_config.rgb_disable_led)
@@ -304,6 +246,7 @@ void rgb_matrix_indicators_user(void) {
 
         // case MY_MAC_BASE:
         // case MY_MAC_NUML:
+        // case MY_WIN_BASE:
         default:
             if (led_sngltn.lyr_led && user_config.rgb_disable_led) {
                 __rgb_matrix_set_all_color_by_flag(LED_FLAG_LAYER_IND, 0, 0, 0);  // off

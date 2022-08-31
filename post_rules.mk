@@ -3,12 +3,12 @@
 
 EEPROM ?= yes
 ifneq ($(strip $(EEPROM)), yes)
-	OPT_DEFS += -DUSE_EEPROM
+	OPT_DEFS += -DEEPROM_ENABLE
 else
-	OPT_DEFS += -DUSE_EFL_WL
+	OPT_DEFS += -DEFL_WL_ENABLE
 endif
 
 FACTORY_RESET ?= yes
 ifeq ($(strip $(FACTORY_RESET)), yes)
-	OPT_DEFS += -DUSE_FACTORY_RESET
+	OPT_DEFS += -DFACTORY_RESET_ENABLE
 endif
