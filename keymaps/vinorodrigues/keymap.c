@@ -4,6 +4,14 @@
 #include QMK_KEYBOARD_H
 #include "keymaps.h"
 
+
+#ifdef VIA_PROTOCOL_VERSION
+    // make sure this runs with VIA >= 1.3.1
+    #undef VIA_PROTOCOL_VERSION
+    #define VIA_PROTOCOL_VERSION 0x0009
+#endif
+
+
 #ifdef RGB_MATRIX_ENABLE
 
 typedef union {
