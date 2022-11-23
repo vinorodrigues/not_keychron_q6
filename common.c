@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include QMK_KEYBOARD_H
-#include "keymaps.h"
+#include "common.h"
 #include "version.h"
 
 
@@ -169,6 +169,150 @@ bool __factory_rt(keyrecord_t *record, uint8_t data) {
 #endif  // FACTORY_RESET_ENABLE
 
 
+/* ----------------------
+ * RGB and Indicator LEDs
+ * ---------------------- */
+
+#if defined(RGB_MATRIX_ENABLE) \
+    && (defined(CAPS_LOCK_LED_INDEX) || defined(NUM_LOCK_LED_INDEX) || defined(SCROLL_LOCK_LED_INDEX))
+
+    #ifdef RGB_MATRIX_MAXIMUM_BRIGHTNESS
+        #define LED_BRIGHTNESS_HI RGB_MATRIX_MAXIMUM_BRIGHTNESS
+    #else
+        #define LED_BRIGHTNESS_HI 0xFF
+    #endif
+
+    #ifdef RGB_MATRIX_VAL_STEP
+        #define LED_VAL_STEP RGB_MATRIX_VAL_STEP
+    #else
+        #define LED_VAL_STEP 8
+    #endif
+
+    #define LED_BRIGHTNESS_LO LED_VAL_STEP
+
+typedef union {
+    uint32_t raw;
+    struct {
+        bool rgb_disable_led:1;
+    };
+} kb_config_t;
+
+kb_config_t kb_config;
+
+bool is_q6_rgb_disabled(void) {
+    return kb_config.rgb_disable_led;
+}
+
+typedef union {
+    uint16_t raw;
+    struct {
+        bool caps_led:1;
+        bool num_led:1;
+        bool scrl_led:1;
+    };
+} led_sngltn_kb_t;
+
+led_sngltn_kb_t led_sngltn_kb;
+
+void update_q6_rgb_mode(void) {
+    if (kb_config.rgb_disable_led) {
+        rgb_matrix_set_flags(1 << 7);  // set high bit, don't use 0, disables LED to off condition
+        rgb_matrix_set_color_all(HSV_OFF);
+    } else {
+        rgb_matrix_set_flags(LED_FLAG_ALL);
+        rgb_matrix_enable_noeeprom();
+    }
+}
+
+void get_q6_rgb_mode(void) {
+    kb_config.raw = eeconfig_read_kb();  // read config from EEPROM
+    update_q6_rgb_mode();
+}
+
+void set_q6_rgb_mode(void) {
+    eeconfig_update_kb(kb_config.raw);  // write back to EEPROM
+}
+
+void keyboard_post_init_kb(void) {
+    keyboard_post_init_user();
+    led_sngltn_kb.raw = 0;
+    get_q6_rgb_mode();
+}
+
+void eeconfig_init_kb(void) {
+    // EEPROM is getting reset!
+    eeconfig_init_user();
+    kb_config.raw = 0;
+    set_q6_rgb_mode();
+}
+
+uint8_t get_q6_brightness(void) {
+    uint8_t value = rgb_matrix_get_val();
+    if (value < LED_BRIGHTNESS_LO) {
+        value = LED_BRIGHTNESS_LO;
+    } else if (value < (LED_BRIGHTNESS_HI - LED_VAL_STEP)) {
+        if (!is_q6_rgb_disabled())
+            value += LED_VAL_STEP; // one step more than current brightness
+    } else {
+        value = LED_BRIGHTNESS_LO;
+    }
+    return value;
+}
+
+extern void rgb_matrix_update_pwm_buffers(void);
+
+void rgb_matrix_indicators_kb(void) {
+    rgb_matrix_indicators_user();
+
+    uint8_t v = get_q6_brightness();
+    led_t led_state = host_keyboard_led_state();
+
+    #if defined(CAPS_LOCK_LED_INDEX)
+    if (led_state.caps_lock) {
+        rgb_matrix_set_color(CAPS_LOCK_LED_INDEX, v, v, v);
+        if (!led_sngltn_kb.caps_led && !is_q6_rgb_disabled())
+            led_sngltn_kb.caps_led = true;
+    } else if (led_sngltn_kb.caps_led) {
+        rgb_matrix_set_color(CAPS_LOCK_LED_INDEX, 0, 0, 0);
+        led_sngltn_kb.caps_led = false;
+    }
+    #endif
+
+    #if defined(NUM_LOCK_LED_INDEX)
+    if (led_state.num_lock) {
+        rgb_matrix_set_color(NUM_LOCK_LED_INDEX, v, v, v);
+        if (!led_sngltn_kb.num_led && !is_q6_rgb_disabled())
+            led_sngltn_kb.num_led = true;
+    } else if (led_sngltn_kb.num_led) {
+        rgb_matrix_set_color(NUM_LOCK_LED_INDEX, 0, 0, 0);
+        led_sngltn_kb.num_led = false;
+    }
+    #endif
+
+    #if defined(SCROLL_LOCK_LED_INDEX)
+    if (led_state.scroll_lock) {
+        rgb_matrix_set_color(SCROLL_LOCK_LED_INDEX, v, v, v);
+        if (!led_sngltn_kb.scrl_led && !is_q6_rgb_disabled())
+            led_sngltn_kb.scrl_led = true;
+    } else if (led_sngltn_kb.scrl_led) {
+        rgb_matrix_set_color(SCROLL_LOCK_LED_INDEX, 0, 0, 0);
+        led_sngltn_kb.scrl_led = false;
+    }
+    #endif
+}
+
+// does this do anything?
+bool led_update_kb(led_t led_state) {
+    bool res = led_update_user(led_state);
+    if (res) {
+        rgb_matrix_update_pwm_buffers();
+    }
+    return res;
+}
+
+#endif // CAPS_LOCK_LED_INDEX or NUM_LOCK_LED_INDEX or SCROLL_LOCK_LED_INDEX
+
+
 /* -------------------
  * Keypress processing
  * ------------------- */
@@ -235,6 +379,30 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
         case KC_Z: return __factory_rt(record, KEY_PRESS_Z);
 
         #endif  // FACTORY_RESET_ENABLE
+
+        case RGB_TOG:
+            /* |    Level    | LED |
+             * |-------------|-----|
+             * | 0 (default) | on  |
+             * |     1       | OFF |
+             */
+            if (record->event.pressed) {
+                kb_config.rgb_disable_led = kb_config.rgb_disable_led ? 0 : 1;
+                set_q6_rgb_mode();  // save
+                update_q6_rgb_mode();  // set kb states
+            }
+            return false;  // block default RGB_TOG
+
+        case QK_BOOT:
+            if (record->event.pressed) {
+                rgblight_enable_noeeprom();
+                rgblight_mode_noeeprom(1);
+                rgb_matrix_set_color_all(LED_BRIGHTNESS_HI, 0, 0);  // All red
+                rgb_matrix_update_pwm_buffers();
+                wait_ms(10);  // give it time to change LED's
+            }
+            return true;
+
 
         // Default
         default:

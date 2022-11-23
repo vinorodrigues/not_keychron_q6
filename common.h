@@ -53,3 +53,6 @@ enum macos_consumer_usages {
 #define Q6_EECL KC_CLEAR_EEPROM
 #define Q6_VRSN KC_VERSION
 #define RGB_RMD RGB_RMOD
+
+bool is_q6_rgb_disabled(void);
+uint8_t get_q6_brightness(void);

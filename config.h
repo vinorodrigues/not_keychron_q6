@@ -133,11 +133,14 @@
     #define ENABLE_RGB_MATRIX_SOLID_MULTISPLASH         // Hue & value pulse away from multiple key hits then fades value out
 #endif  // RGB_MATRIX_ENABLE
 
-/* Enable caps-lock LED*/
+/* Enable caps-lock LED */
 #define CAPS_LOCK_LED_INDEX 61  // 3,0
 
-/* Enable NUM_LOCK_LED_INDEX */
+/* Enable num-lock LED */
 #define NUM_LOCK_LED_INDEX 37  // 1,17 (1,H)
+
+/* Enable scroll-lock LED */
+#define SCROLL_LOCK_LED_INDEX 12
 
 
 /* -----------------------

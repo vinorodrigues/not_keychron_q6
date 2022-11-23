@@ -2,12 +2,7 @@
 
 ## General
 
-- [x] Caps-lock indicator
-- [x] Num-lock indicator (Mac emulation and Windows)
-- [ ] ~~Scroll-lock indicator (self finding)~~ *(self finding slows the kb down)*
-
-- [x] VIA `.json` file
-- [x] Port to Vial
+*(none)*
 
 ## Public readiness
 

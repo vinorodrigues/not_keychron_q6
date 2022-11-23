@@ -2,29 +2,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include QMK_KEYBOARD_H
-#include "keymaps.h"
-
+#include "common.h"
 
 #ifdef VIA_PROTOCOL_VERSION
     // make sure this runs with VIA >= 1.3.1
     #undef VIA_PROTOCOL_VERSION
     #define VIA_PROTOCOL_VERSION 0x0009
 #endif
-
-
-#ifdef RGB_MATRIX_ENABLE
-
-typedef union {
-    uint32_t raw;
-    struct {
-        bool rgb_disable_led:1;
-    };
-} user_config_t;
-
-user_config_t user_config;
-
-#endif  // RGB_MATRIX_ENABLE
-
 
 enum my_layers {
     MY_MAC_BASE,
@@ -97,7 +81,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 #define LED_FLAG_ALPHA_KEY 0x10  // Alpha keys (for Caps Lock)
 #define LED_FLAG_LAYER_IND 0x20  // Layer indicator
-#define LED_FLAG_UNUSED    0xC0  // 0b11000000
 
 const uint8_t g_led_config_new_flags[DRIVER_LED_TOTAL] = {
     // Extended LED Index to Flag
@@ -142,54 +125,18 @@ bool dip_switch_update_user(uint8_t index, bool active) {
 #ifdef RGB_MATRIX_ENABLE
 
 typedef union {
-    uint32_t raw;
+    uint16_t raw;
     struct {
         bool caps_led:1;
         bool num_led:1;
         bool lyr_led:1;
     };
-} led_sngltn_t;
+} led_sngltn_user_t;
 
-led_sngltn_t led_sngltn;
-
-#ifdef RGB_MATRIX_MAXIMUM_BRIGHTNESS
-    #define Q6_INDICATOR_MAX_BRIGHTNESS RGB_MATRIX_MAXIMUM_BRIGHTNESS
-#else
-    #define Q6_INDICATOR_MAX_BRIGHTNESS 0xFF
-#endif
-
-#ifdef RGB_MATRIX_VAL_STEP
-    #define Q6_INDICATOR_VAL_STEP RGB_MATRIX_VAL_STEP
-#else
-    #define Q6_INDICATOR_VAL_STEP 8
-#endif
-
-void update_q6_rgb_mode(void) {
-    if (user_config.rgb_disable_led) {
-        rgb_matrix_set_flags(LED_FLAG_UNUSED);  // don't use 0, disables LED to off condition
-        rgb_matrix_set_color_all(HSV_OFF);
-    } else {
-        rgb_matrix_set_flags(LED_FLAG_ALL);
-        rgb_matrix_enable_noeeprom();
-    }
-
-    eeconfig_update_kb(user_config.raw);  // write back to EEPROM
-}
-
-void get_q6_rgb_mode(void) {
-    user_config.raw = eeconfig_read_kb();  // read config from EEPROM
-    update_q6_rgb_mode();
-}
+led_sngltn_user_t led_sngltn_user;
 
 void keyboard_post_init_user(void) {
-    led_sngltn.raw = 0;
-    get_q6_rgb_mode();
-}
-
-void eeconfig_init_user(void) {
-    // EEPROM is getting reset!
-    user_config.raw = 0;
-    update_q6_rgb_mode();
+    led_sngltn_user.raw = 0;
 }
 
 void __rgb_matrix_set_all_color_by_flag(uint8_t flag, uint8_t R, uint8_t G, uint8_t B) {
@@ -204,101 +151,54 @@ void rgb_matrix_indicators_user(void) {
     uint8_t layer = get_highest_layer(layer_state);
     bool mac_nl = (layer == MY_MAC_NUML);
 
-    uint8_t v = rgb_matrix_get_val();
-    if (v < Q6_INDICATOR_VAL_STEP) {
-        v = Q6_INDICATOR_VAL_STEP;
-    } else if (v < (Q6_INDICATOR_MAX_BRIGHTNESS - Q6_INDICATOR_VAL_STEP)) {
-        if (!user_config.rgb_disable_led) {
-            v += Q6_INDICATOR_VAL_STEP;  // inc. by one more step than current brightness
-        }  // else leave as current brightness
-    } else {
-        v = Q6_INDICATOR_MAX_BRIGHTNESS;
-    }
+    uint8_t v = get_q6_brightness();
+    led_t led_state = host_keyboard_led_state();
 
-    // caps-lock indicators
-    if (host_keyboard_led_state().caps_lock) {
-        rgb_matrix_set_color(CAPS_LOCK_LED_INDEX, v, v, v);  // white
-        if (!user_config.rgb_disable_led)
+    // caps-lock indicators - not the caps-lock key, but all the alphas
+    if (led_state.caps_lock) {
+        if (!is_q6_rgb_disabled()) {
             __rgb_matrix_set_all_color_by_flag(LED_FLAG_ALPHA_KEY, v, 0, 0);  // red
-        if (!led_sngltn.caps_led && user_config.rgb_disable_led)
-            led_sngltn.caps_led = true;
-    } else if (led_sngltn.caps_led) {
-        rgb_matrix_set_color(CAPS_LOCK_LED_INDEX, HSV_OFF);  // off, if it was on before
+            if (!led_sngltn_user.caps_led)
+                led_sngltn_user.caps_led = true;
+        }
+    } else if (led_sngltn_user.caps_led) {
         __rgb_matrix_set_all_color_by_flag(LED_FLAG_ALPHA_KEY, 0, 0, 0);
-        led_sngltn.caps_led = false;
+        led_sngltn_user.caps_led = false;
     }
 
-    // num-lock indicators
-    if (host_keyboard_led_state().num_lock || mac_nl) {
+    // num-lock indicators - only the mac-mode layer hack
+    if (mac_nl) {
         rgb_matrix_set_color(NUM_LOCK_LED_INDEX, v, v, v);  // white
-        if (!led_sngltn.num_led && user_config.rgb_disable_led)
-            led_sngltn.num_led = true;
-    } else if (led_sngltn.num_led) {
+        if (!led_sngltn_user.num_led && !is_q6_rgb_disabled())
+            led_sngltn_user.num_led = true;
+    } else if (led_sngltn_user.num_led) {
         rgb_matrix_set_color(NUM_LOCK_LED_INDEX, HSV_OFF);  // off, if it was on before
-        led_sngltn.num_led = false;
+        led_sngltn_user.num_led = false;
     }
 
     // layer indicators
     switch (layer) {
         case MY_MAC_FN:
             __rgb_matrix_set_all_color_by_flag(LED_FLAG_LAYER_IND, 0, 0, v);  // blue
-            if (!led_sngltn.lyr_led)
-                led_sngltn.lyr_led = true;
+            if (!led_sngltn_user.lyr_led)
+                led_sngltn_user.lyr_led = true;
             break;
 
         case MY_WIN_FN:
             __rgb_matrix_set_all_color_by_flag(LED_FLAG_LAYER_IND, 0, v, 0);  // green
-            if (!led_sngltn.lyr_led && user_config.rgb_disable_led)
-                led_sngltn.lyr_led = true;
+            if (!led_sngltn_user.lyr_led && is_q6_rgb_disabled())
+                led_sngltn_user.lyr_led = true;
             break;
 
         // case MY_MAC_BASE:
         // case MY_MAC_NUML:
         // case MY_WIN_BASE:
         default:
-            if (led_sngltn.lyr_led && user_config.rgb_disable_led) {
+            if (led_sngltn_user.lyr_led && is_q6_rgb_disabled()) {
                 __rgb_matrix_set_all_color_by_flag(LED_FLAG_LAYER_IND, 0, 0, 0);  // off
-                led_sngltn.lyr_led = false;
+                led_sngltn_user.lyr_led = false;
             }
             break;  // do nothing
-    }
-}
-
-/*
- * Extra keys and RGB Toggle handler
- */
-
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    switch (keycode) {
-
-        case QK_BOOT:
-            if (record->event.pressed) {
-                rgb_matrix_set_color_all(Q6_INDICATOR_MAX_BRIGHTNESS, 0, 0);  // All red
-                rgb_matrix_driver.flush();
-                wait_ms(10);  // give it time to go red
-            }
-            return true;
-
-        case RGB_TOG:
-            /* |    Level    | LED |
-             * |-------------|-----|
-             * | 0 (default) | on  |
-             * |     1       | OFF |
-             */
-            if (record->event.pressed) {
-                user_config.rgb_disable_led = user_config.rgb_disable_led ? 0 : 1;
-                update_q6_rgb_mode();
-            }
-            return false;  // block default RGB_TOG
-
-        case EE_CLR:
-            if (!record->event.pressed) {  // on release
-                get_q6_rgb_mode();
-            }
-            return true;  // let this one pass on
-
-        default:
-            return true; /* Process all other keycodes normally */
     }
 }
 
