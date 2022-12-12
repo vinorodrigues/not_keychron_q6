@@ -15,7 +15,7 @@
     },
     "matrix_pins": {
         "rows": ["B5", "B4", "B3", "A15", "A14", "A13"],
-        "cols": ["A10", "A9", "A8", "B1", "B0", "A7", "A6", "A5", "A4", "A3", "NO_PIN", "NO_PIN", "NO_PIN", "NO_PIN", "NO_PIN", "NO_PIN", "NO_PIN", "NO_PIN", "NO_PIN", "NO_PIN"]
+        "cols": ["A10", "A9", "A8", "B1", "B0", "A7", "A6", "A5", "A4", "A3", null, null, null, null, null, null, null, null, null, null]
     },
     "processor": "STM32L432",
     "url": "https://www.keychron.com//search?q=Q6",

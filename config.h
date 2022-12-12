@@ -3,12 +3,23 @@
 
 #pragma once
 
+
 /* -------
  * Unknown
  * ------- */
 
 #define NO_PIN_NUM 10
 #define CLR_VAL 0x3FF
+
+
+/* ------------------------------
+ * Increase I2C speed to 1000 KHz
+ * ------------------------------ */
+#define I2C1_TIMINGR_PRESC 0U
+#define I2C1_TIMINGR_SCLDEL 3U
+#define I2C1_TIMINGR_SDADEL 0U
+#define I2C1_TIMINGR_SCLH 15U
+#define I2C1_TIMINGR_SCLL 51U
 
 
 /* -----------------
@@ -19,11 +30,11 @@
     /* An assumption is made that a ST `M24C32-FMN6TP` 32Kbit module is used */
     /* EEPROM Driver Configuration */
     #define EXTERNAL_EEPROM_I2C_BASE_ADDRESS 0b10100010  // Base I2C address for the EEPROM – shifted left by 1 as per i2c_master requirements
-    #define EXTERNAL_EEPROM_BYTE_COUNT 4096              // Total size of the EEPROM in bytes
-    // #define EXTERNAL_EEPROM_PAGE_SIZE 32                 // Page size of the EEPROM in bytes, as specified in the datasheet
-    // #define EXTERNAL_EEPROM_ADDRESS_SIZE 2               // The number of bytes to transmit for the memory location within the EEPROM
-    // #define EXTERNAL_EEPROM_WRITE_TIME 5                 // Write cycle time of the EEPROM, as specified in the datasheet
-    // #undef EXTERNAL_EEPROM_WP_PIN                        // If defined the WP pin will be toggled appropriately when writing to the EEPROM.	none
+    #define EXTERNAL_EEPROM_BYTE_COUNT 4096              // Total size of the EEPROM in bytes  =(1024*32)/8
+    // #define EXTERNAL_EEPROM_PAGE_SIZE 32                 // Page size of the EEPROM in bytes, as specified in the datasheet, default = 32
+    // #define EXTERNAL_EEPROM_ADDRESS_SIZE 2               // The number of bytes to transmit for the memory location within the EEPROM, default = 2
+    // #define EXTERNAL_EEPROM_WRITE_TIME 5                 // Write cycle time of the EEPROM, as specified in the datasheet, default = 5
+    // #undef EXTERNAL_EEPROM_WP_PIN                        // If defined the WP pin will be toggled appropriately when writing to the EEPROM, default = none
 #elif EFL_WL_ENABLE
     /* EFL/WL Driver Configuration */
     #define WEAR_LEVELING_LOGICAL_SIZE 2048  // Number of bytes "exposed" to the rest of QMK and denotes the size of the usable EEPROM. Page size of stm32l432 is 2k
@@ -39,7 +50,7 @@
 
 #define DIP_SWITCH_MATRIX_GRID  { {5, 4} }
 #define SCAN_COUNT_MAX 100
-#define MATRIX_MASKED  // Disable DIP switch in matrix data
+#define MATRIX_MASKED  // Disable DIP switch in matrix data - see q6.c matrix_row_t
 
 
 /* ---------------------
@@ -55,6 +66,8 @@
 /* ----------
  * RGB Matrix
  * ---------- */
+
+#define CKLED2001_CURRENT_TUNE { 0xA4, 0xA4, 0x52, 0xA4, 0xA4, 0x52, 0xA4, 0xA4, 0x52, 0xA4, 0xA4, 0x52 }
 
 #ifdef RGB_MATRIX_ENABLE
 

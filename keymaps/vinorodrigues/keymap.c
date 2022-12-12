@@ -4,6 +4,8 @@
 #include QMK_KEYBOARD_H
 #include "common.h"
 
+// clang-format off
+
 #ifdef VIA_PROTOCOL_VERSION
     // make sure this runs with VIA >= 1.3.1
     #undef VIA_PROTOCOL_VERSION
@@ -71,6 +73,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______,          QK_BOOT, _______, _______, Q6_VRSN, _______, NK_TOGG, _______, _______, _______, _______,          _______,          _______,          _______, _______, _______, _______,
         _______, _______, _______,                            _______,                            _______, _______, _______, _______, _______, _______, _______, _______,           _______         )
 };
+
+// clang-format on
 
 
 /* ------------

@@ -22,7 +22,7 @@ const matrix_row_t matrix_mask[] = {
     0b11111111111111111111,
     0b11111111111111111111,
     0b11111111111111111111,
-    0b11111111111111101111,
+    0b11111111111001101111,  // 4 = dip, 7 & 8 = encoder emul.
 };
 
 #ifdef DIP_SWITCH_ENABLE
