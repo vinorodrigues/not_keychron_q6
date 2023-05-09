@@ -60,103 +60,10 @@ All that is needed is to solder on:
 
 > :information_source: : If you're compiling for the EFL/WL driver you don't need to solder anything.
 
-## Preparation
+## How?
 
-1. If you haven't already create an instance of the source code on your computer - you'll want to use either a fork of, or a clone of, one of the following:
+The code is intended to be a **replacement** of the existing code.
 
-    * [`qmk/qmk_firmware:develop`](https://github.com/qmk/qmk_firmware/tree/develop) - The `develop` branch at QMK.  *(Works for both external EEPROM and EFL/WL compile.)*
-    * [`qmk/qmk_firmware`](https://github.com/qmk/qmk_firmware) - The core QMK code base.  *(Only works for the external EEPROM compile, __as of July 2022__. After the next quarterly merge this should work on the EFL/WL too.)*
-
-2. Navigate to the root of the repo's folder.
-
-3. Create and activate a new **branch**. *(Never write to the `master` or `main` branch!)*
-
-    > :stop_sign:	: If you don't know how to do that then stop here - you may need to brush up on your Git skills.
-
-4. Either:
-
-    a. Create a symbolic link to this repo pulled onto your computer;
-
-      - Mac:
-
-        ```bash
-        mkdir keyboards/notkeychron
-        ln -s /path/to/this/repo keyboards/notkeychron/q6
-        ```
-
-      - Win:
-
-        ```pwsh
-        mkdir keyboards/notkeychron
-        mklink /D \path\to\this\repo keyboards/notkeychron/q6
-        ```
-
-
-        .. or ..
-
-    b. Create a "submodule" to this repo and then move the module to the correct folder;
-
-      - Mac & Win
-
-        ```pwsh
-        git submodule add https://github.com/vinorodrigues/not_keychron_q6
-        mkdir keyboards/notkeychron
-        git mv not_keychron_q6 keyboards/notkeychron/q6
-        ```
-
-        > :shrug: : IMO this is the better method
-
-5.  That should be it.  You're ready to compile.
-
-    ```pwsh
-    make notkeychron/q6:ansi_knob
-    ```
-
-## Compile
-
-The source code supports all versions of the Q6.  To compile use the following command line:
-
-| Variant | Driver | Compile command |
-|---------|--------|-----------------|
-| Q6 Ansi Knob | EFL/WL | `make notkeychron/q6:ansi_knob` <sup>1</sup> |
-| Q6 Ansi Knob | ext. EEPROM | `make notkeychron/q6:ansi_knob EEPROM=1` |
-
-<!--
-| Q1V2 Ansi | EFL/WL | `make notkeychron/q1/v2:ansi` |
-| :clock2: &nbsp; Q1V2 ISO UK | EFL/WL | `make notkeychron/q1/v2:iso_uk` |
-| :clock230: &nbsp; Q1V2 ISO UK Knob | EFL/WL | `make notkeychron/q1/v2:iso_uk_knob` |
-| | | ***The following are special builds*** |
-| Author's Q1V2 <sup>3</sup> | ext. EEPROM | `make notkeychron/q1/v2:vinorodrigues EEPROM=1` |
-| :clock4: &nbsp; Q1V2 ISO DE Knob <sup>4</sup> | EFL/WL | `make notkeychron/q1/v2:iso_de`  |
-| :clock5: &nbsp; Q1V2 ISO FR Knob <sup>5</sup> | EFL/WL | `make notkeychron/q1/v2:iso_fr`  |
--->
-
-<small>
-    <sup>1</sup> = Default<br>
-    <!--
-    <sup>2</sup> = Japanese Industrial Standard Layout<br>
-    <sup>3</sup> = macOS only (OS toggle / DIP switch disabled ), Custom LED configurations and Layer lighting example.<br>
-    <sup>4</sup> = German ISO Layout<br>
-    <sup>5</sup> = French ISO Layout<br>
-    :clock12: = Code under development and not published yet
-    -->
-</small>
-
-***
-
-## VIA
-
-The VIA sideload file provided by Keychron will not work in this source - you will need to use the version provided.
-
-See: https://github.com/vinorodrigues/not_keychron_q6/tree/main/the-via
-
-> :shrug: : IMO there is no need to create an instance of each variant of the keyboard ... both QMK and VIA can handle multiple layouts in one source base.
-
-## Vial
-
-Vial's source base does not include the EFL/WL source base yet *(as of 15 Jul 2022 )* ... but the external EEPROM variant will work.
-
-> :information_source: : *For now follow the instructions at https://get.vial.today/docs/*
 
 ***
 
